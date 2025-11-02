@@ -1,0 +1,81 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}{{ session.quiz.title }} - Результати{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Результати вікторини</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Загальний результат</h5>
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <h3>{{ total_questions }}</h3>
+                    <p>Всього питань</p>
+                </div>
+                <div class="col-md-4">
+                    <h3>{{ correct_answers }}</h3>
+                    <p>Правильних відповідей</p>
+                </div>
+                <div class="col-md-4">
+                    <h3>{{ session.total_score }}</h3>
+                    <p>Набрано балів</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Детальний огляд відповідей</h2>
+    
+    {% for data in questions_data %}
+        <div class="card mb-3 {% if data.is_correct %}border-success{% else %}border-danger{% endif %}">
+            <div class="card-header {% if data.is_correct %}bg-success{% else %}bg-danger{% endif %} text-white">
+                Питання {{ data.question.order }}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ data.question.text }}</h5>
+                
+                {% if data.question.image %}
+                    <img src="{{ data.question.image.url }}" alt="Зображення до питання" class="img-fluid mb-3">
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col">
+                        <strong>Тип питання:</strong> 
+                        {% if data.question.question_type == 'binary' %}
+                            2 варіанти (1 правильний)
+                        {% elif data.question.question_type == 'single' %}
+                            4 варіанти (1 правильний)
+                        {% else %}
+                            4 варіанти (декілька правильних)
+                        {% endif %}
+                    </div>
+                    <div class="col text-end">
+                        <strong>Зароблено балів:</strong> {{ data.points }}
+                    </div>
+                </div>
+
+                <h6>Ваші відповіді:</h6>
+                <ul class="list-group">
+                    {% for answer in data.answers %}
+                        <li class="list-group-item {% if answer.answer.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}">
+                            {{ answer.answer.text }}
+                            {% if answer.answer.is_correct %}
+                                <span class="badge bg-success float-end">Правильно</span>
+                            {% else %}
+                                <span class="badge bg-danger float-end">Неправильно</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="text-center mt-4">
+        <a href="{% url 'leaderboard' session.quiz.id %}" class="btn btn-primary">Таблиця лідерів</a>
+        <a href="{% url 'index' %}" class="btn btn-outline-primary">На головну</a>
+    </div>
+</div>
+{% endblock %}

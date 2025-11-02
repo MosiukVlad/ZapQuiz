@@ -1,0 +1,127 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}{{ question.quiz.title }} - Питання {{ question_number }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="progress mb-3">
+        <div class="progress-bar" role="progressbar" 
+             style="width: {{ question_number|multiply:100|divide:total_questions }}%">
+            Питання {{ question_number }} з {{ total_questions }}
+        </div>
+    </div>
+
+    <div class="timer" id="timer">{{ time_limit }}</div>
+
+    <h2 class="mb-4">{{ question.text }}</h2>
+    
+    {% if question.image %}
+        <img src="{{ question.image.url }}" alt="Зображення до питання" class="img-fluid mb-4">
+    {% endif %}
+
+    <form id="answer-form" method="post" action="{% url 'submit_answer' session.id question.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="response_time" id="response_time">
+        
+        <div id="answers-container">
+            {% for answer in question.answers.all %}
+                <button type="button" 
+                        class="answer-button"
+                        data-answer-id="{{ answer.id }}"
+                        {% if question.question_type == 'multiple' %}
+                            onclick="toggleAnswer(this)"
+                        {% else %}
+                            onclick="selectAnswer(this)"
+                        {% endif %}>
+                    {{ answer.text }}
+                </button>
+            {% endfor %}
+        </div>
+
+        {% if question.question_type == 'multiple' %}
+            <button type="button" class="btn btn-primary mt-3 w-100" onclick="submitMultipleAnswers()">
+                Підтвердити відповіді
+            </button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let startTime = new Date().getTime();
+    let timer = {{ time_limit }};
+    let timerInterval;
+
+    // Запускаємо таймер
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timer--;
+            document.getElementById('timer').textContent = timer;
+            if (timer <= 0) {
+                clearInterval(timerInterval);
+                submitAnswer([]); // Відправляємо порожню відповідь
+            }
+        }, 1000);
+    }
+
+    startTimer();
+
+    // Для питань з одною відповіддю
+    function selectAnswer(button) {
+        const answerId = button.dataset.answerId;
+        submitAnswer([answerId]);
+    }
+
+    // Для питань з множинним вибором
+    function toggleAnswer(button) {
+        button.classList.toggle('selected');
+    }
+
+    function submitMultipleAnswers() {
+        const selectedButtons = document.querySelectorAll('.answer-button.selected');
+        const answerIds = Array.from(selectedButtons).map(button => button.dataset.answerId);
+        submitAnswer(answerIds);
+    }
+
+    function submitAnswer(answerIds) {
+        clearInterval(timerInterval);
+        const responseTime = (new Date().getTime() - startTime) / 1000;
+        const form = document.getElementById('answer-form');
+        
+        // Очищаємо попередні відповіді
+        const oldAnswers = form.querySelectorAll('input[name="answers[]"]');
+        oldAnswers.forEach(input => input.remove());
+        
+        // Додаємо нові відповіді
+        answerIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'answers[]';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        document.getElementById('response_time').value = responseTime;
+        
+        // Відправляємо форму
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Показуємо результат
+            answerIds.forEach(id => {
+                const button = document.querySelector(`[data-answer-id="${id}"]`);
+                button.classList.add(data.is_correct ? 'correct' : 'incorrect');
+            });
+            
+            // Переходимо до наступного питання через 2 секунди
+            setTimeout(() => {
+                window.location.href = `/quiz/session/${{{ session.id }}}/question/${data.next_question}/`;
+            }, 2000);
+        });
+    }
+</script>
+{% endblock %}

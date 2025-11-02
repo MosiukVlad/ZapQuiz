@@ -1,0 +1,41 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}{{ quiz.title }} - Таблиця лідерів{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Таблиця лідерів: {{ quiz.title }}</h1>
+    
+    {% if top_sessions %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Місце</th>
+                        <th>Гравець</th>
+                        <th>Бали</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in top_sessions %}
+                        <tr {% if session.player == user %}class="table-info"{% endif %}>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ session.player.username }}</td>
+                            <td>{{ session.total_score }}</td>
+                            <td>{{ session.end_time|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-center">Поки що ніхто не проходив цю вікторину.</p>
+    {% endif %}
+
+    <div class="text-center mt-4">
+        <a href="{% url 'start_quiz' quiz.id %}" class="btn btn-primary">Спробувати</a>
+        <a href="{% url 'index' %}" class="btn btn-outline-primary">На головну</a>
+    </div>
+</div>
+{% endblock %}
