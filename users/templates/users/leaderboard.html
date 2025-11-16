@@ -1,0 +1,41 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Загальна таблиця лідерів - ZapQuiz{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Таблиця лідерів</h1>
+    
+    {% if top_players %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Місце</th>
+                        <th>Гравець</th>
+                        <th>Загальний рахунок</th>
+                        <th>Пройдено вікторин</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in top_players %}
+                        <tr {% if player.user == user %}class="table-info"{% endif %}>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                {% if player.avatar %}
+                                    <img src="{{ player.avatar.url }}" alt="Avatar" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+                                {% endif %}
+                                {{ player.user.username }}
+                            </td>
+                            <td>{{ player.total_score|default:0 }}</td>
+                            <td>{{ player.user.quizsession_set.count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-center">Поки що немає результатів.</p>
+    {% endif %}
+</div>
+{% endblock %}
