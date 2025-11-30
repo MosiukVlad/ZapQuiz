@@ -1,0 +1,63 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Лобі хоста - {{ hosted.quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h2>Лобі: {{ hosted.quiz.title }}</h2>
+    <p>Код лобі: <strong>{{ hosted.run_code }}</strong></p>
+    <p>Створено: {{ hosted.created_at }}</p>
+
+    <h4 class="mt-4">Учасники</h4>
+    <ul class="list-group mb-3">
+        {% for p in participants %}
+            <li class="list-group-item">{{ p.user.username }} {% if p.session %}<span class="badge bg-success ms-2">Сесія готова</span>{% endif %}</li>
+        {% empty %}
+            <li class="list-group-item text-muted">Ще немає учасників</li>
+        {% endfor %}
+    </ul>
+
+    {% if user == hosted.host %}
+        {% if not hosted.is_started and not hosted.is_closed %}
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="start">
+                <button type="submit" class="btn btn-danger">Запустити вікторину</button>
+            </form>
+            <form method="post" class="d-inline ms-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="close">
+                <button type="submit" class="btn btn-outline-secondary">Закрити лобі</button>
+            </form>
+        {% elif hosted.is_closed %}
+            <div class="alert alert-warning">Лобі закрито.</div>
+        {% else %}
+            <div class="alert alert-success">Вікторина запущена. Учасники будуть перенаправлені.</div>
+        {% endif %}
+    {% else %}
+        <p class="text-muted">Чекайте поки хост запустить вікторину.</p>
+        <div id="lobbyStatus" class="d-none"></div>
+        <script>
+            // poll every 1.5s to get JSON status and redirect when participant session is created
+            (function poll(){
+                fetch('{% url "host_status" hosted.id %}', {credentials: 'same-origin'})
+                    .then(r => r.json())
+                    .then(data => {
+                        if(data.is_closed){
+                            document.getElementById('lobbyStatus').textContent = 'closed';
+                            alert('Лобі було закрито хостом.');
+                            return;
+                        }
+                        if(data.is_started && data.participant_session_id){
+                            // redirect participant to their session
+                            window.location = '{% url "quiz_question" session_id=0 question_number=1 %}'.replace('/0/', '/' + data.participant_session_id + '/');
+                            return;
+                        }
+                        setTimeout(poll, 1500);
+                    })
+                    .catch(err => setTimeout(poll, 3000));
+            })();
+        </script>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Результати — {{ session.quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-3">Результати: {{ session.quiz.title }}</h1>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Гравець:</strong> {{ session.user.username }}</p>
+            <p><strong>Набрано балів:</strong> {{ session.total_score }}</p>
+            <p><strong>Початок:</strong> {{ session.started_at }}</p>
+            <p><strong>Завершено:</strong> {{ session.completed_at }}</p>
+        </div>
+    </div>
+
+    <h4>Деталі відповідей</h4>
+    <ul class="list-group mb-3">
+        {% for pa in session.playeranswer_set.all %}
+            <li class="list-group-item">
+                <strong>Питання:</strong> {{ pa.question.text }}<br>
+                {% if pa.question.image %}
+                    <div class="mb-2"><img src="{{ pa.question.image.url }}" alt="question image" class="img-fluid"/></div>
+                {% endif %}
+                <strong>Ваша відповідь:</strong> {{ pa.selected_answer.text }}
+                {% if pa.selected_answer.image %}
+                    <div class="mt-2"><img src="{{ pa.selected_answer.image.url }}" alt="answer image" style="max-height:80px;" /></div>
+                {% endif %}
+                {% if pa.selected_answer.is_correct %}
+                    <span class="badge bg-success ms-2">Правильно</span>
+                {% else %}
+                    <span class="badge bg-danger ms-2">Неправильно</span>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item">Немає відповідей.</li>
+        {% endfor %}
+    </ul>
+
+    <div class="text-center">
+        <a href="{% url 'quiz_leaderboard' session.quiz.id %}" class="btn btn-primary">Дивитись лідерів</a>
+        <a href="{% url 'index' %}" class="btn btn-secondary">На головну</a>
+    </div>
+</div>
+{% endblock %}

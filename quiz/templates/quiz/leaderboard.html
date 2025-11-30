@@ -1,41 +1,41 @@
 {% extends 'quiz/base.html' %}
 
-{% block title %}{{ quiz.title }} - Таблиця лідерів{% endblock %}
+{% block title %}Лідери — {{ quiz.title }}{% endblock %}
 
 {% block content %}
 <div class="quiz-container">
-    <h1 class="mb-4">Таблиця лідерів: {{ quiz.title }}</h1>
-    
-    {% if top_sessions %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-primary">
-                    <tr>
-                        <th>Місце</th>
-                        <th>Гравець</th>
-                        <th>Бали</th>
-                        <th>Дата</th>
+    <h1 class="mb-3">Лідери: {{ quiz.title }}</h1>
+
+    {% if top_players %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Гравець</th>
+                    <th>Бали</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in top_players %}
+                    <tr {% if user.is_authenticated and s.user == user %}class="table-info"{% endif %}>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if s.user.userprofile.avatar %}
+                                <img src="{{ s.user.userprofile.avatar.url }}" alt="avatar" class="rounded-circle me-2" style="width:30px;height:30px;">
+                            {% endif %}
+                            {{ s.user.username }}
+                        </td>
+                        <td>{{ s.total_score }}</td>
+                        <td>{{ s.completed_at|date:"Y-m-d H:i" }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for session in top_sessions %}
-                        <tr {% if session.player == user %}class="table-info"{% endif %}>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ session.player.username }}</td>
-                            <td>{{ session.total_score }}</td>
-                            <td>{{ session.end_time|date:"d.m.Y H:i" }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
-        <p class="text-center">Поки що ніхто не проходив цю вікторину.</p>
+        <p>Поки немає результатів.</p>
     {% endif %}
 
-    <div class="text-center mt-4">
-        <a href="{% url 'start_quiz' quiz.id %}" class="btn btn-primary">Спробувати</a>
-        <a href="{% url 'index' %}" class="btn btn-outline-primary">На головну</a>
-    </div>
+    <a href="{% url 'index' %}" class="btn btn-secondary">На головну</a>
 </div>
 {% endblock %}

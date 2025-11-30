@@ -1,0 +1,47 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}{{ session.quiz.title }} — Питання {{ question_number }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="d-flex justify-content-between mb-3">
+        <h4>Питання {{ question_number }}</h4>
+        <div>Сесія: {{ session.user.username }}</div>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ question.text }}</h5>
+            {% if question.image %}
+                <div class="mb-3">
+                    <img src="{{ question.image.url }}" alt="Question image" class="img-fluid" />
+                </div>
+            {% endif %}
+            {% if question.answers.all %}
+            <form method="post" action="{% url 'submit_answer' session.id question.id %}">
+                {% csrf_token %}
+                {% for ans in question.answers.all %}
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="answer_id" id="a{{ ans.id }}" value="{{ ans.id }}">
+                        <label class="form-check-label" for="a{{ ans.id }}">
+                            {% if ans.image %}<img src="{{ ans.image.url }}" alt="Answer image" style="max-height:80px;" class="me-2" />{% endif %}
+                            {{ ans.text }}
+                        </label>
+                    </div>
+                {% endfor %}
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Відповісти</button>
+                    <a href="{% url 'quiz_results' session.id %}" class="btn btn-outline-secondary">Завершити</a>
+                </div>
+            </form>
+            {% else %}
+                <p class="text-muted">Немає доступних відповідей для цього питання.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

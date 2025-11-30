@@ -63,7 +63,7 @@
                                         <tr>
                                             <td>{{ session.quiz.title }}</td>
                                             <td>{{ session.total_score }}</td>
-                                            <td>{{ session.end_time|date:"d.m.Y H:i" }}</td>
+                                            <td>{{ session.completed_at|date:"d.m.Y H:i" }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -71,6 +71,32 @@
                         </div>
                     {% else %}
                         <p class="text-center">Ви ще не проходили жодної вікторини.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h4 class="card-title">Вікторини, створені вами</h4>
+                    {% if created_quizzes %}
+                        <ul class="list-group list-group-flush">
+                            {% for q in created_quizzes %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <a href="{% url 'quiz_detail' q.id %}">{{ q.title }}</a>
+                                        {% if q.code %}
+                                            <small class="text-muted">&nbsp;(<code>{{ q.code }}</code>)</small>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <a class="btn btn-sm btn-outline-primary" href="{% url 'quiz_code_leaderboard' q.id %}">Рейтинг (код)</a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_quiz_questions' q.id %}">Редагувати</a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-center">Ви ще не створили жодної вікторини.</p>
                     {% endif %}
                 </div>
             </div>

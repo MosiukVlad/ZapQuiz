@@ -1,4 +1,5 @@
 {% extends 'quiz/base.html' %}
+{% load duration_extras %}
 
 {% block title %}ZapQuiz - Головна{% endblock %}
 
@@ -16,10 +17,10 @@
                             <p class="card-text">{{ quiz.description }}</p>
                             <ul class="list-unstyled">
                                 <li><strong>Кількість питань:</strong> {{ quiz.question_count }}</li>
-                                <li><strong>Час на питання:</strong> {{ quiz.time_limit }} сек.</li>
+                                <li><strong>Час на питання:</strong> {{ quiz.time_limit|duration_hm }}</li>
                             </ul>
                             <a href="{% url 'start_quiz' quiz.id %}" class="btn btn-primary">Почати</a>
-                            <a href="{% url 'leaderboard' quiz.id %}" class="btn btn-outline-primary">Лідери</a>
+                            <a href="{% url 'quiz_leaderboard' quiz.id %}" class="btn btn-outline-primary">Лідери</a>
                         </div>
                     </div>
                 </div>

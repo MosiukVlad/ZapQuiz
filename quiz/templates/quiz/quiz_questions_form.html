@@ -1,0 +1,33 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Редагувати питання - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Додати / Редагувати питання для "{{ quiz.title }}"</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% for form in formset %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    {% for field in form.visible_fields %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field.errors }}
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    {% if form.instance.pk %}
+                        <a href="{% url 'edit_question_answers' form.instance.pk %}" class="btn btn-sm btn-outline-secondary">Додати / Редагувати відповіді</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Зберегти питання</button>
+        <a href="{% url 'index' %}" class="btn btn-secondary">Назад</a>
+    </form>
+</div>
+{% endblock %}

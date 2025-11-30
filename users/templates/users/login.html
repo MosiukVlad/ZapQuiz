@@ -1,0 +1,31 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Увійти - ZapQuiz{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h2 class="mb-4">Увійти</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+        {% if form.errors %}
+            <div class="alert alert-danger">Будь ласка, виправте помилки нижче.</div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label for="id_username" class="form-label">Ім'я користувача</label>
+            <input type="text" name="username" autofocus required id="id_username" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="id_password" class="form-label">Пароль</label>
+            <input type="password" name="password" required id="id_password" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Увійти</button>
+        <a href="{% url 'register' %}" class="btn btn-link">Реєстрація</a>
+    </form>
+</div>
+{% endblock %}

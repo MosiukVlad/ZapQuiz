@@ -1,0 +1,28 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Відповіді - Питання {{ question.order }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Додати / Редагувати відповіді для питання {{ question.order }}</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% for form in formset %}
+            <div class="mb-3">
+                {% for field in form.visible_fields %}
+                    <div class="mb-2">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field.errors }}
+                        {{ field }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Зберегти відповіді</button>
+        <a href="{% url 'edit_quiz_questions' question.quiz.id %}" class="btn btn-secondary">Назад до питань</a>
+    </form>
+</div>
+{% endblock %}

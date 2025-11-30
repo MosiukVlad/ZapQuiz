@@ -15,6 +15,7 @@
                         <th>Гравець</th>
                         <th>Загальний рахунок</th>
                         <th>Пройдено вікторин</th>
+                        <th>Середній бал</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -28,7 +29,8 @@
                                 {{ player.user.username }}
                             </td>
                             <td>{{ player.total_score|default:0 }}</td>
-                            <td>{{ player.user.quizsession_set.count }}</td>
+                            <td>{{ player.num_sessions|default:0 }}</td>
+                            <td>{{ player.avg_score|floatformat:2 }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

@@ -1,0 +1,26 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Приєднатися - ZapQuiz{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Приєднатися до вікторини</h1>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="row g-3 align-items-center">
+        {% csrf_token %}
+        <div class="col-auto" style="flex:1;">
+            <input type="text" name="code" class="form-control" placeholder="Введіть код вікторини (наприклад ABC123)" autofocus>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Приєднатися</button>
+        </div>
+    </form>
+
+    <hr>
+    <p class="text-muted">Або перегляньте доступні вікторини <a href="{% url 'quiz_list' %}">тут</a>.</p>
+</div>
+{% endblock %}

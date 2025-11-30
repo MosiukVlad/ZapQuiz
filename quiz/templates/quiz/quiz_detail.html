@@ -1,0 +1,36 @@
+{% extends 'quiz/base.html' %}
+{% load duration_extras %}
+
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-3">{{ quiz.title }}</h1>
+    <p class="lead">{{ quiz.description }}</p>
+
+    <ul class="list-unstyled mb-3">
+        {% if quiz.code %}
+        <li><strong>Код:</strong> <code>{{ quiz.code }}</code></li>
+        {% endif %}
+        <li><strong>Питань:</strong> {{ questions.count }}</li>
+    <li><strong>Час на питання:</strong> {{ quiz.time_limit|duration_hm }}</li>
+        <li><strong>Автор:</strong>
+            {% if quiz.creator %}
+                {{ quiz.creator.username }}
+            {% else %}
+                Адміністратор
+            {% endif %}
+        </li>
+    </ul>
+
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'start_quiz' quiz.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-lg">Почати вікторину</button>
+        <a href="{% url 'index' %}" class="btn btn-secondary">Назад</a>
+    </form>
+    {% else %}
+    <p>Будь ласка, <a href="{% url 'login' %}">увійдіть</a>, щоб почати вікторину.</p>
+    {% endif %}
+</div>
+{% endblock %}

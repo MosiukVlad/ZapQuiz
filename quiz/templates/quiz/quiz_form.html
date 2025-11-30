@@ -1,0 +1,371 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Створити вікторину{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <h1 class="mb-4">Створити вікторину</h1>
+
+    <form method="post" id="quiz_create_form" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="questions_json" id="questions_json" value="" />
+        {% if error %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endif %}
+        {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field.errors }}
+                {{ field }}
+                {% if field.help_text %}
+                    <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <hr>
+
+        <div class="mb-3">
+            <button type="button" class="btn btn-outline-primary" id="addQuestionBtn">Додати запитання</button>
+        </div>
+
+        <div id="questionsContainer" class="mb-4">
+            <!-- JS will render added questions here -->
+        </div>
+
+        <!-- Legacy single-question fields (kept for fallback) -->
+        <div id="legacyQuestionArea" style="display:none;">
+            <h3>Початкове питання (мінімум 1)</h3>
+            <div class="mb-3">
+                <label class="form-label" for="{{ question_form.text.id_for_label }}">Питання</label>
+                {{ question_form.text.errors }}
+                {{ question_form.text }}
+                <div class="mt-2">
+                    {{ question_form.image.errors }}
+                    {{ question_form.image }}
+                </div>
+            </div>
+
+            <h4>Відповіді (мінімум 2)</h4>
+            {{ answer_formset.management_form }}
+            {% for aform in answer_formset.forms %}
+                <div class="row g-2 align-items-center mb-2">
+                    <div class="col-9">
+                        {{ aform.text.errors }}
+                        {{ aform.text }}
+                        <div class="mt-2">
+                            {{ aform.image.errors }}
+                            {{ aform.image }}
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <label class="form-check">
+                            {{ aform.is_correct }} Правильно
+                        </label>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" id="createBtn" class="btn btn-primary">Створити</button>
+        <a href="{% url 'index' %}" class="btn btn-secondary">Відмінити</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add bootstrap classes to form widgets
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('input, textarea, select').forEach(el => el.classList.add('form-control'));
+    });
+</script>
+<script>
+// Dynamic questions and answers (client-side)
+document.addEventListener('DOMContentLoaded', function(){
+    try{
+        console.debug('quiz_form: init dynamic Q&A');
+        const addQBtn = document.getElementById('addQuestionBtn');
+        const questionsContainer = document.getElementById('questionsContainer');
+        const questionsInput = document.getElementById('questions_json');
+        let questions = [];
+
+        function renderQuestions(){
+            questionsContainer.innerHTML = '';
+            questions.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = 'card mb-2';
+                const body = document.createElement('div');
+                body.className = 'card-body';
+                const title = document.createElement('h5');
+                title.className = 'card-title';
+                title.textContent = (idx+1) + '. ' + q.text;
+                body.appendChild(title);
+
+                // question image input
+                const qImgWrap = document.createElement('div');
+                qImgWrap.className = 'mb-2';
+                const qImgLabel = document.createElement('label');
+                qImgLabel.className = 'form-label';
+                qImgLabel.textContent = 'Зображення питання (опційно)';
+                const qImgInput = document.createElement('input');
+                qImgInput.type = 'file';
+                qImgInput.name = `q${idx}_image`;
+                qImgInput.accept = 'image/*';
+                qImgInput.className = 'form-control';
+                // preview element for question image
+                const qImgPreview = document.createElement('img');
+                qImgPreview.style.maxWidth = '200px';
+                qImgPreview.style.display = 'block';
+                qImgPreview.className = 'mt-2';
+                qImgInput.addEventListener('change', function(ev){
+                    const f = ev.target.files && ev.target.files[0];
+                    if(!questions[idx]) questions[idx] = {text: q.text || '', answers: q.answers || []};
+                    if(f){
+                        // store File object so it survives re-renders
+                        questions[idx].imageFile = f;
+                        try{ qImgPreview.src = URL.createObjectURL(f); }catch(e){}
+                    } else {
+                        questions[idx].imageFile = null;
+                        qImgPreview.src = '';
+                    }
+                });
+                qImgWrap.appendChild(qImgLabel);
+                qImgWrap.appendChild(qImgInput);
+                qImgWrap.appendChild(qImgPreview);
+                body.appendChild(qImgWrap);
+
+                // answers list
+                const list = document.createElement('ul');
+                list.className = 'list-group mb-2';
+                (q.answers || []).forEach((a, ai) => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    const row = document.createElement('div');
+                    row.className = 'd-flex align-items-center justify-content-between';
+                    const left = document.createElement('div');
+                    left.textContent = a.text;
+                    row.appendChild(left);
+
+                    const right = document.createElement('div');
+                    right.className = 'd-flex align-items-center';
+                    if(a.is_correct){
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-success ms-2';
+                        badge.textContent = 'Правильно';
+                        right.appendChild(badge);
+                    }
+                    // answer image input
+                    const aImgInput = document.createElement('input');
+                    aImgInput.type = 'file';
+                    aImgInput.name = `q${idx}_a${ai}_image`;
+                    aImgInput.accept = 'image/*';
+                    aImgInput.className = 'form-control form-control-sm ms-2';
+                    aImgInput.style.maxWidth = '160px';
+                    // preview for answer image
+                    const aImgPreview = document.createElement('img');
+                    aImgPreview.style.maxHeight = '80px';
+                    aImgPreview.style.display = 'block';
+                    aImgPreview.className = 'ms-2';
+                    aImgInput.addEventListener('change', function(ev){
+                        const f = ev.target.files && ev.target.files[0];
+                        if(!questions[idx]) questions[idx] = {text: q.text || '', answers: q.answers || []};
+                        if(!questions[idx].answers) questions[idx].answers = [];
+                        if(!questions[idx].answers[ai]) questions[idx].answers[ai] = {};
+                        if(f){
+                            questions[idx].answers[ai].imageFile = f;
+                            try{ aImgPreview.src = URL.createObjectURL(f); }catch(e){}
+                        } else {
+                            questions[idx].answers[ai].imageFile = null;
+                            aImgPreview.src = '';
+                        }
+                    });
+                    right.appendChild(aImgInput);
+                    right.appendChild(aImgPreview);
+
+                    const del = document.createElement('button');
+                    del.className = 'btn btn-sm btn-outline-danger ms-2';
+                    del.textContent = 'Видалити';
+                    del.onclick = () => { q.answers.splice(ai,1); renderQuestions(); };
+                    right.appendChild(del);
+                    row.appendChild(right);
+                    li.appendChild(row);
+                    list.appendChild(li);
+                });
+                body.appendChild(list);
+
+                const controls = document.createElement('div');
+                controls.className = 'd-flex gap-2';
+                const addAnswerBtn = document.createElement('button');
+                addAnswerBtn.type = 'button';
+                addAnswerBtn.className = 'btn btn-sm btn-outline-primary';
+                addAnswerBtn.textContent = 'Додати відповідь';
+                addAnswerBtn.onclick = () => addAnswerPrompt(idx);
+                controls.appendChild(addAnswerBtn);
+
+                const delQ = document.createElement('button');
+                delQ.type = 'button';
+                delQ.className = 'btn btn-sm btn-outline-danger';
+                delQ.textContent = 'Видалити питання';
+                delQ.onclick = () => { questions.splice(idx,1); renderQuestions(); };
+                controls.appendChild(delQ);
+
+                body.appendChild(controls);
+                card.appendChild(body);
+                questionsContainer.appendChild(card);
+            });
+            questionsInput.value = JSON.stringify(questions);
+        }
+
+        function addAnswerPrompt(qidx){
+            try{
+                const text = prompt('Текст відповіді:');
+                if(!text) return;
+                const is_correct = confirm('Натисніть OK якщо відповідь правильна, Cancel - якщо ні');
+                // include placeholder for image so change handler can set it
+                questions[qidx].answers.push({text: text, is_correct: is_correct, imageFile: null});
+                renderQuestions();
+            }catch(err){
+                console.error('addAnswerPrompt failed', err);
+            }
+        }
+
+        if(addQBtn){
+            addQBtn.addEventListener('click', function(){
+                try{
+                    const text = prompt('Назва питання:');
+                    if(!text) return;
+                    // include imageFile placeholder
+                    questions.push({text: text, answers: [], imageFile: null});
+                    renderQuestions();
+                }catch(err){
+                    console.error('addQuestion failed', err);
+                }
+            });
+        }else{
+            console.warn('addQuestionBtn not found');
+        }
+
+        // on submit validate
+        const form = document.querySelector('form');
+        if(form){
+            form.addEventListener('submit', async function(e){
+                try{
+                    // validate structure client-side
+                    if(questions.length > 0){
+                        for(const q of questions){
+                            const answersCount = (q.answers || []).filter(a => a.text && a.text.trim()).length;
+                            if(!q.text || q.text.trim() === '' || answersCount < 2){
+                                e.preventDefault();
+                                alert('Кожне питання має мати текст та принаймні 2 відповіді.');
+                                return false;
+                            }
+                        }
+                        questionsInput.value = JSON.stringify(questions);
+                    }
+
+                    // check if there are any stored File objects that need to be uploaded
+                    let hasFiles = false;
+                    for(const [qi, q] of (questions || []).entries()){
+                        if(q && q.imageFile) { hasFiles = true; break; }
+                        if(q && q.answers){
+                            for(const [ai, a] of q.answers.entries()){
+                                if(a && a.imageFile){ hasFiles = true; break; }
+                            }
+                        }
+                        if(hasFiles) break;
+                    }
+
+                    if(!hasFiles){
+                        // no stored files; allow normal submit
+                        return true;
+                    }
+
+                    // Prevent default form submit and POST via fetch with FormData including stored File objects
+                    e.preventDefault();
+                    const fd = new FormData(form);
+                    // ensure JSON is included
+                    fd.set('questions_json', questionsInput.value);
+
+                    // append stored files using same naming convention
+                    for(const [qi, q] of (questions || []).entries()){
+                        if(q && q.imageFile){
+                            fd.set(`q${qi}_image`, q.imageFile, q.imageFile.name);
+                        }
+                        if(q && q.answers){
+                            for(const [ai, a] of q.answers.entries()){
+                                if(a && a.imageFile){
+                                    fd.set(`q${qi}_a${ai}_image`, a.imageFile, a.imageFile.name);
+                                }
+                            }
+                        }
+                    }
+
+                    // CSRF token
+                    const csrf = (form.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+
+                    const resp = await fetch(form.action || window.location.href, {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        headers: csrf ? {'X-CSRFToken': csrf} : {},
+                    });
+
+                    // If server redirected, follow it
+                    if(resp.redirected){
+                        window.location = resp.url;
+                        return false;
+                    }
+
+                    // If server returned a new page (e.g., validation errors), replace current document
+                    const text = await resp.text();
+                    document.open();
+                    document.write(text);
+                    document.close();
+                    return false;
+
+                }catch(err){
+                    console.error('submit handler error', err);
+                    // on error fall back to normal submit
+                    return true;
+                }
+            });
+        }else{
+            console.warn('form element not found on quiz create page');
+        }
+    }catch(e){
+        console.error('quiz_form init failed', e);
+    }
+});
+</script>
+<script>
+// Force direct submit to bypass any interfering handlers if needed
+document.addEventListener('DOMContentLoaded', function(){
+    try{
+        const createBtn = document.getElementById('createBtn');
+        const form = document.getElementById('quiz_create_form');
+        if(createBtn && form){
+            createBtn.addEventListener('click', function(e){
+                try{
+                    console.debug('createBtn clicked - preparing submit');
+                    // ensure JSON reflects current state (file inputs are part of DOM so will be submitted)
+                    questionsInput.value = JSON.stringify(questions);
+                    // Prefer requestSubmit() when available so the normal submit event runs
+                    if(typeof form.requestSubmit === 'function'){
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }catch(err){
+                    console.error('Error preparing submit', err);
+                    // fallback to raw submit
+                    try{ form.submit(); } catch(e){ console.error(e); }
+                }
+            });
+        } else {
+            console.warn('createBtn or quiz_create_form not found');
+        }
+    }catch(e){console.error('create submit init failed', e)}
+});
+</script>
+{% endblock %}

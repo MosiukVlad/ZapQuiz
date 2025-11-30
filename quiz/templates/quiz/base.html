@@ -60,12 +60,33 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'index' %}">Головна</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'global_leaderboard' %}">Лідери</a>
+                    </li>
                 </ul>
-                {% if user.is_authenticated %}
-                    <span class="navbar-text">
-                        Вітаємо, {{ user.username }}!
-                    </span>
-                {% endif %}
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'quiz_create' %}">Створити</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile' %}">Профіль</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link btn btn-link p-0">Вийти</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Увійти</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">Реєстрація</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>

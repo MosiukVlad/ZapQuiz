@@ -1,0 +1,40 @@
+{% extends 'quiz/base.html' %}
+
+{% block title %}Рейтинг (код) - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h3>Рейтинг — гравці, що приєдналися по коду</h3>
+            <p class="text-muted">Вікторина: <strong>{{ quiz.title }}</strong> {% if quiz.code %} — код: <code>{{ quiz.code }}</code>{% endif %}</p>
+            {% if sessions %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Місце</th>
+                                <th>Гравець</th>
+                                <th>Бали</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in sessions %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ session.user.username }}</td>
+                                    <td>{{ session.total_score }}</td>
+                                    <td>{{ session.completed_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">Поки немає результатів від гравців, що приєдналися по коду.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
